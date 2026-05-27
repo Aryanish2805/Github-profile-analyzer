@@ -1,0 +1,39 @@
+services:
+  # The GitHub Profile Analyzer Node.js application
+  # (Optional: you can run the app locally with 'npm run dev' and just use this for the DB)
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=github_analyzer_secret
+      - DB_NAME=github_analyzer
+      # Replace this with a real token in your local environment
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-} 
+      - JWT_SECRET=development_secret_key_change_me
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=github_analyzer_secret
+      - MYSQL_DATABASE=github_analyzer
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
