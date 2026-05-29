@@ -1,101 +1,54 @@
+// DOM Elements
+const navHome = document.getElementById('nav-home');
+const navCompare = document.getElementById('nav-compare');
+const viewDashboard = document.getElementById('view-dashboard');
+const viewCompare = document.getElementById('view-compare');
+
 const analyzeForm = document.getElementById('analyze-form');
 const compareForm = document.getElementById('compare-form');
-const statusBar = document.getElementById('status-bar');
-const resultSection = document.getElementById('result-section');
-const compareSection = document.getElementById('compare-section');
-const profileResult = document.getElementById('profile-result');
-const compareResult = document.getElementById('compare-result');
+const usernameInput = document.getElementById('username');
+const compareInput = document.getElementById('compare-users');
 
-function setStatus(message, type = 'info') {
-  statusBar.textContent = message;
-  statusBar.classList.remove('success', 'error');
-  if (type === 'success') statusBar.classList.add('success');
-  if (type === 'error') statusBar.classList.add('error');
-}
+const statusMessage = document.getElementById('status-message');
+const profileContainer = document.getElementById('profile-result-container');
+const compareContainer = document.getElementById('compare-result-container');
 
-function formatNumber(value) {
-  return value === null || value === undefined ? '-' : value.toLocaleString();
-}
-
-function createProfileCard(profile) {
-  const card = document.createElement('div');
-  card.className = 'profile-card';
-
-  const header = document.createElement('header');
-  header.innerHTML = `
-    <img src="${profile.avatar_url}" alt="${profile.username} avatar" />
-    <div>
-      <h3><a href="${profile.html_url}" target="_blank">${profile.name || profile.username}</a></h3>
-      <p>${profile.bio || 'No bio available.'}</p>
-      <p><strong>Username:</strong> ${profile.username}</p>
-    </div>
-  `;
-
-  const metrics = document.createElement('div');
-  metrics.className = 'profile-meta';
-  metrics.innerHTML = `
-    <span><strong>Followers</strong><strong>${formatNumber(profile.followers)}</strong></span>
-    <span><strong>Following</strong><strong>${formatNumber(profile.following)}</strong></span>
-    <span><strong>Public repos</strong><strong>${formatNumber(profile.public_repos)}</strong></span>
-    <span><strong>Profile score</strong><strong>${profile.profile_score?.toFixed(1) || '-'}</strong></span>
-    <span><strong>Trending score</strong><strong>${profile.trending_score?.toFixed(1) || '-'}</strong></span>
-    <span><strong>Most used language</strong><strong>${profile.most_used_language || 'N/A'}</strong></span>
-  `;
-
-  const repoTitle = document.createElement('h3');
-  repoTitle.textContent = 'Top repositories';
-
-  const repoList = document.createElement('div');
-  repoList.className = 'repo-list';
-  const repos = profile.top_repositories || [];
-  if (repos.length === 0) {
-    const empty = document.createElement('p');
-    empty.textContent = 'No top repositories available yet.';
-    repoList.appendChild(empty);
+// Navigation Logic
+function switchView(view) {
+  if (view === 'home') {
+    navHome.classList.add('active');
+    navCompare.classList.remove('active');
+    viewDashboard.classList.remove('hidden');
+    viewCompare.classList.add('hidden');
+    statusMessage.classList.add('hidden');
   } else {
-    repos.slice(0, 5).forEach((repo) => {
-      const item = document.createElement('div');
-      item.className = 'repo-item';
-      item.innerHTML = `
-        <a href="${repo.html_url}" target="_blank"><strong>${repo.name}</strong></a>
-        <p>${repo.description || 'No description provided.'}</p>
-        <p><strong>Language:</strong> ${repo.language || 'N/A'} · <strong>⭐</strong> ${repo.stars || 0} · <strong>🍴</strong> ${repo.forks || 0}</p>
-      `;
-      repoList.appendChild(item);
-    });
+    navCompare.classList.add('active');
+    navHome.classList.remove('active');
+    viewCompare.classList.remove('hidden');
+    viewDashboard.classList.add('hidden');
+    statusMessage.classList.add('hidden');
   }
-
-  card.appendChild(header);
-  card.appendChild(metrics);
-  card.appendChild(repoTitle);
-  card.appendChild(repoList);
-  return card;
 }
 
-function createCompareCard(comparison) {
-  const card = document.createElement('div');
-  card.className = 'compare-card-result';
+navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+navCompare.addEventListener('click', (e) => { e.preventDefault(); switchView('compare'); });
 
-  const winner = comparison.winner?.username ? `Overall Winner: ${comparison.winner.username}` : 'No overall winner determined';
-  card.innerHTML = `
-    <h3>${winner}</h3>
-    <p>Comparison metrics are based on the highest profile score and selected GitHub profile statistics.</p>
-  `;
+// Helpers
+function setStatus(msg, type = 'info') {
+  if (!msg) {
+    statusMessage.classList.add('hidden');
+    return;
+  }
+  statusMessage.className = `status-message ${type}`;
+  let icon = 'info';
+  if (type === 'success') icon = 'check-circle';
+  if (type === 'error') icon = 'warning-circle';
+  statusMessage.innerHTML = `<i class="ph-fill ph-${icon}"></i> <span>${msg}</span>`;
+  statusMessage.classList.remove('hidden');
+}
 
-  const metricList = document.createElement('ul');
-  metricList.className = 'compare-metrics';
-
-  Object.entries(comparison.metrics || {}).forEach(([metric, data]) => {
-    const item = document.createElement('li');
-    const rows = data.values
-      .map((value) => `<div>${value.username}: <strong>${formatNumber(value.value)}</strong></div>`)
-      .join('');
-    item.innerHTML = `<strong>${metric.replace(/_/g, ' ')}</strong>${rows}`;
-    metricList.appendChild(item);
-  });
-
-  card.appendChild(metricList);
-  return card;
+function formatNumber(num) {
+  return num === null || num === undefined ? '-' : num.toLocaleString();
 }
 
 async function fetchApi(path, options) {
@@ -111,47 +64,148 @@ async function fetchApi(path, options) {
   return payload.data;
 }
 
-analyzeForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const username = document.getElementById('username').value.trim();
+// Render Profile
+function renderProfile(profile) {
+  let reposHtml = '';
+  const repos = profile.top_repositories || [];
+  if (repos.length === 0) {
+    reposHtml = '<p class="repo-desc">No repositories available.</p>';
+  } else {
+    reposHtml = repos.slice(0, 6).map(repo => `
+      <div class="repo-card">
+        <div class="repo-name"><a href="${repo.html_url}" target="_blank">${repo.name}</a></div>
+        <p class="repo-desc">${repo.description || 'No description'}</p>
+        <div class="repo-meta">
+          <span><i class="ph-fill ph-star"></i> ${formatNumber(repo.stars)}</span>
+          <span><i class="ph-fill ph-git-fork"></i> ${formatNumber(repo.forks)}</span>
+          ${repo.language ? `<span><i class="ph-fill ph-code"></i> ${repo.language}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const html = `
+    <div class="profile-dashboard">
+      <div class="profile-sidebar">
+        <div class="card user-card">
+          <img src="${profile.avatar_url}" alt="Avatar" />
+          <h3><a href="${profile.html_url}" target="_blank">${profile.name || profile.username}</a></h3>
+          <p class="username">@${profile.username}</p>
+          <p class="bio">${profile.bio || ''}</p>
+        </div>
+        <div class="card stat-box highlight">
+          <span class="stat-label">Profile Score</span>
+          <span class="stat-value">${profile.profile_score?.toFixed(1) || '-'}</span>
+        </div>
+        <div class="card stat-box">
+          <span class="stat-label">Trending Score</span>
+          <span class="stat-value">${profile.trending_score?.toFixed(1) || '-'}</span>
+        </div>
+      </div>
+      <div class="profile-main">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Followers</span>
+            <span class="stat-value">${formatNumber(profile.followers)}</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Following</span>
+            <span class="stat-value">${formatNumber(profile.following)}</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Public Repos</span>
+            <span class="stat-value">${formatNumber(profile.public_repos)}</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Top Language</span>
+            <span class="stat-value">${profile.most_used_language || 'N/A'}</span>
+          </div>
+        </div>
+        <div class="repos-container">
+          <h3><i class="ph ph-book-bookmark"></i> Top Repositories</h3>
+          <div class="repo-grid">
+            ${reposHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  profileContainer.innerHTML = html;
+  profileContainer.classList.remove('hidden');
+}
+
+// Render Comparison
+function renderCompare(comparison) {
+  const users = Object.keys(comparison.metrics?.followers?.values || {}).map(k => comparison.metrics.followers.values[k].username);
+  
+  const headers = users.map(u => `<th>${u}</th>`).join('');
+  
+  const rows = Object.entries(comparison.metrics || {}).map(([metric, data]) => {
+    const metricName = metric.replace(/_/g, ' ');
+    const cells = data.values.map(v => `<td><strong>${formatNumber(v.value)}</strong></td>`).join('');
+    return `<tr><td>${metricName}</td>${cells}</tr>`;
+  }).join('');
+
+  const winnerHtml = comparison.winner?.username 
+    ? `<div class="compare-winner"><i class="ph-fill ph-trophy"></i> <strong>Winner: ${comparison.winner.username}</strong></div>`
+    : '';
+
+  const html = `
+    <div class="compare-table-wrapper">
+      ${winnerHtml}
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            ${headers}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+  compareContainer.innerHTML = html;
+  compareContainer.classList.remove('hidden');
+}
+
+// Event Listeners
+analyzeForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = usernameInput.value.trim();
   if (!username) return;
 
-  setStatus('Analyzing profile…', 'info');
-  resultSection.classList.add('hidden');
-  compareSection.classList.add('hidden');
+  switchView('home');
+  document.querySelector('.hero-section').style.display = 'none'; // hide hero once searched
+  profileContainer.classList.add('hidden');
+  setStatus(`Analyzing @${username}...`, 'info');
 
   try {
-    const profile = await fetchApi(`/api/github/analyze/${encodeURIComponent(username)}`);
-    profileResult.innerHTML = '';
-    profileResult.appendChild(createProfileCard(profile));
-    resultSection.classList.remove('hidden');
-    setStatus(`Profile for ${profile.username} loaded successfully.`, 'success');
-  } catch (error) {
-    setStatus(error.message || 'Failed to analyze profile.', 'error');
+    const profile = await fetchApi(`/api/github/analyze/${encodeURIComponent(username)}`, { method: 'POST' });
+    renderProfile(profile);
+    setStatus(`Successfully analyzed @${profile.username}`, 'success');
+  } catch (err) {
+    setStatus(err.message, 'error');
   }
 });
 
-compareForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const raw = document.getElementById('compare-users').value.trim();
+compareForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const raw = compareInput.value.trim();
   if (!raw) return;
 
-  setStatus('Comparing profiles…', 'info');
-  resultSection.classList.add('hidden');
-  compareSection.classList.add('hidden');
+  compareContainer.classList.add('hidden');
+  setStatus(`Comparing profiles...`, 'info');
 
   try {
-    const users = raw.split(',').map((value) => value.trim()).filter(Boolean);
-    if (users.length < 2) {
-      throw new Error('Enter at least two usernames separated by commas.');
-    }
+    const users = raw.split(',').map(v => v.trim()).filter(Boolean);
+    if (users.length < 2) throw new Error('Enter at least two usernames');
     const params = new URLSearchParams({ users: users.join(',') });
     const comparison = await fetchApi(`/api/github/compare?${params.toString()}`);
-    compareResult.innerHTML = '';
-    compareResult.appendChild(createCompareCard(comparison));
-    compareSection.classList.remove('hidden');
-    setStatus(`Comparison completed for ${users.length} profiles.`, 'success');
-  } catch (error) {
-    setStatus(error.message || 'Failed to compare profiles.', 'error');
+    renderCompare(comparison);
+    setStatus('Comparison complete', 'success');
+  } catch (err) {
+    setStatus(err.message, 'error');
   }
 });

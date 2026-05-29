@@ -5,53 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GitHub Profile Analyzer</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- Use Inter font for a modern SaaS look -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Phosphor Icons for premium iconography -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="hero">
-      <div>
-        <h1>GitHub Profile Analyzer</h1>
-        <p>Search, compare, and inspect GitHub profiles with scores, trending insights, and repository highlights.</p>
+  <div class="dashboard">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="ph-fill ph-github-logo"></i>
+          <span>Analyzer</span>
+        </div>
       </div>
-      <a class="cta-link" href="/api-docs" target="_blank">API Docs</a>
-    </header>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" id="nav-home">
+          <i class="ph ph-house"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-compare">
+          <i class="ph ph-git-diff"></i>
+          <span>Compare</span>
+        </a>
+        <a href="/api-docs" target="_blank" class="nav-item">
+          <i class="ph ph-file-code"></i>
+          <span>API Docs</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="pulse"></span> System Online
+        </div>
+      </div>
+    </aside>
 
-    <section class="card search-card">
-      <h2>Analyze a GitHub profile</h2>
-      <form id="analyze-form">
-        <label for="username">GitHub username</label>
-        <input id="username" name="username" type="text" placeholder="e.g. torvalds" required />
-        <button type="submit">Analyze Profile</button>
-      </form>
-    </section>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="search-container">
+          <i class="ph ph-magnifying-glass search-icon"></i>
+          <form id="analyze-form">
+            <input type="text" id="username" placeholder="Search GitHub username... (e.g. torvalds)" autocomplete="off" required>
+          </form>
+        </div>
+        <div class="user-actions">
+          <button class="icon-btn"><i class="ph ph-bell"></i></button>
+          <div class="avatar-placeholder"></div>
+        </div>
+      </header>
 
-    <section class="card compare-card">
-      <h2>Compare profiles</h2>
-      <form id="compare-form">
-        <label for="compare-users">Enter two or more usernames</label>
-        <input id="compare-users" name="compareUsers" type="text" placeholder="e.g. torvalds, gaearon" required />
-        <button type="submit">Compare Profiles</button>
-      </form>
-    </section>
+      <!-- Content Views -->
+      <div class="content-scroll">
+        <div id="status-message" class="status-message hidden"></div>
 
-    <div id="status-bar" class="status-bar"></div>
+        <!-- Dashboard / Single User View -->
+        <div id="view-dashboard" class="view-section active">
+          <div class="hero-section">
+            <div class="hero-text">
+              <h1>Insights at a glance.</h1>
+              <p>Analyze any GitHub profile to uncover advanced metrics, trending scores, and repository statistics.</p>
+            </div>
+            <div class="hero-graphic">
+              <i class="ph-duotone ph-chart-line-up"></i>
+            </div>
+          </div>
 
-    <section id="result-section" class="card result-card hidden">
-      <h2>Profile Result</h2>
-      <div id="profile-result"></div>
-    </section>
+          <div id="profile-result-container" class="result-container hidden">
+            <!-- Profile data injected here by JS -->
+          </div>
+        </div>
 
-    <section id="compare-section" class="card result-card hidden">
-      <h2>Comparison Result</h2>
-      <div id="compare-result"></div>
-    </section>
+        <!-- Compare View -->
+        <div id="view-compare" class="view-section hidden">
+          <div class="section-header">
+            <h2>Compare Profiles</h2>
+            <p>Enter comma-separated usernames to run a side-by-side analysis.</p>
+          </div>
+          
+          <div class="card form-card">
+            <form id="compare-form">
+              <div class="input-group">
+                <i class="ph ph-users"></i>
+                <input type="text" id="compare-users" placeholder="e.g. torvalds, gaearon" required>
+              </div>
+              <button type="submit" class="btn-primary">
+                <i class="ph ph-play"></i> Run Comparison
+              </button>
+            </form>
+          </div>
 
-    <footer class="footer">
-      <span>Powered by the GitHub Profile Analyzer API.</span>
-      <span>Run locally at <code>http://localhost:3000</code></span>
-    </footer>
+          <div id="compare-result-container" class="result-container hidden">
+            <!-- Compare data injected here by JS -->
+          </div>
+        </div>
+
+      </div>
+    </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
