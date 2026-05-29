@@ -13,6 +13,37 @@ const statusMessage = document.getElementById('status-message');
 const profileContainer = document.getElementById('profile-result-container');
 const compareContainer = document.getElementById('compare-result-container');
 
+let langChartInstance = null;
+
+// Initialize tsparticles
+tsParticles.load("tsparticles", {
+  preset: "sea",
+  background: {
+    color: "#09090b",
+  },
+  particles: {
+    color: { value: ["#3b82f6", "#a855f7"] },
+    links: { enable: true, color: "#3b82f6", opacity: 0.2 },
+    move: { enable: true, speed: 0.8 },
+    number: { value: 60 }
+  }
+});
+
+// Animate counting numbers
+function animateValue(obj, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    obj.innerHTML = current.toLocaleString();
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
 // Navigation Logic
 function switchView(view) {
   if (view === 'home') {
@@ -72,7 +103,7 @@ function renderProfile(profile) {
     reposHtml = '<p class="repo-desc">No repositories available.</p>';
   } else {
     reposHtml = repos.slice(0, 6).map(repo => `
-      <div class="repo-card">
+      <div class="repo-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
         <div class="repo-name"><a href="${repo.html_url}" target="_blank">${repo.name}</a></div>
         <p class="repo-desc">${repo.description || 'No description'}</p>
         <div class="repo-meta">
@@ -87,38 +118,42 @@ function renderProfile(profile) {
   const html = `
     <div class="profile-dashboard">
       <div class="profile-sidebar">
-        <div class="card user-card">
+        <div class="card user-card" data-tilt data-tilt-max="3" data-tilt-glare data-tilt-max-glare="0.1">
           <img src="${profile.avatar_url}" alt="Avatar" />
           <h3><a href="${profile.html_url}" target="_blank">${profile.name || profile.username}</a></h3>
           <p class="username">@${profile.username}</p>
           <p class="bio">${profile.bio || ''}</p>
         </div>
-        <div class="card stat-box highlight">
+        <div class="card stat-box highlight" data-tilt data-tilt-scale="1.05">
           <span class="stat-label">Profile Score</span>
-          <span class="stat-value">${profile.profile_score?.toFixed(1) || '-'}</span>
+          <span class="stat-value" id="score-val">${profile.profile_score?.toFixed(1) || '-'}</span>
         </div>
-        <div class="card stat-box">
+        <div class="card stat-box" data-tilt>
           <span class="stat-label">Trending Score</span>
           <span class="stat-value">${profile.trending_score?.toFixed(1) || '-'}</span>
+        </div>
+        <div class="card stat-box" data-tilt>
+          <span class="stat-label">Top Language</span>
+          <span class="stat-value" style="color: #3b82f6;">${profile.most_used_language || 'N/A'}</span>
         </div>
       </div>
       <div class="profile-main">
         <div class="stats-grid">
-          <div class="stat-box">
+          <div class="stat-box" data-tilt data-tilt-glare data-tilt-max-glare="0.1">
             <span class="stat-label">Followers</span>
-            <span class="stat-value">${formatNumber(profile.followers)}</span>
+            <span class="stat-value animate-num" data-val="${profile.followers}">0</span>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" data-tilt data-tilt-glare data-tilt-max-glare="0.1">
             <span class="stat-label">Following</span>
-            <span class="stat-value">${formatNumber(profile.following)}</span>
+            <span class="stat-value animate-num" data-val="${profile.following}">0</span>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" data-tilt data-tilt-glare data-tilt-max-glare="0.1">
             <span class="stat-label">Public Repos</span>
-            <span class="stat-value">${formatNumber(profile.public_repos)}</span>
+            <span class="stat-value animate-num" data-val="${profile.public_repos}">0</span>
           </div>
-          <div class="stat-box">
-            <span class="stat-label">Top Language</span>
-            <span class="stat-value">${profile.most_used_language || 'N/A'}</span>
+          <div class="stat-box" data-tilt data-tilt-glare data-tilt-max-glare="0.1">
+            <span class="stat-label">Language Chart</span>
+            <canvas id="langChart" style="max-height: 80px;"></canvas>
           </div>
         </div>
         <div class="repos-container">
@@ -132,6 +167,56 @@ function renderProfile(profile) {
   `;
   profileContainer.innerHTML = html;
   profileContainer.classList.remove('hidden');
+
+  // Trigger animations
+  document.querySelectorAll('.animate-num').forEach(el => {
+    const endVal = parseInt(el.getAttribute('data-val')) || 0;
+    animateValue(el, 0, endVal, 1000);
+  });
+
+  // Init Vanilla Tilt
+  VanillaTilt.init(document.querySelectorAll("[data-tilt]"));
+
+  // Render Chart
+  renderChart(repos);
+}
+
+function renderChart(repos) {
+  if (langChartInstance) langChartInstance.destroy();
+  const ctx = document.getElementById('langChart');
+  if (!ctx) return;
+
+  const langCounts = {};
+  repos.forEach(r => {
+    if (r.language) {
+      langCounts[r.language] = (langCounts[r.language] || 0) + 1;
+    }
+  });
+
+  const labels = Object.keys(langCounts);
+  const data = Object.values(langCounts);
+
+  if (labels.length === 0) return;
+
+  langChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#6366f1'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
 }
 
 // Render Comparison
@@ -151,7 +236,7 @@ function renderCompare(comparison) {
     : '';
 
   const html = `
-    <div class="compare-table-wrapper">
+    <div class="compare-table-wrapper" data-tilt data-tilt-max="2" data-tilt-glare data-tilt-max-glare="0.1">
       ${winnerHtml}
       <table class="compare-table">
         <thead>
@@ -168,6 +253,7 @@ function renderCompare(comparison) {
   `;
   compareContainer.innerHTML = html;
   compareContainer.classList.remove('hidden');
+  VanillaTilt.init(document.querySelectorAll("[data-tilt]"));
 }
 
 // Event Listeners
