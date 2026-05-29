@@ -9,6 +9,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
 
 const logger = require('./config/logger');
 const swaggerSpec = require('./config/swagger');

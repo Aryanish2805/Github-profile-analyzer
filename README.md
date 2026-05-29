@@ -87,15 +87,52 @@ To run the automated test suite (Jest):
 npm test
 ```
 
+## Frontend User Interface
+
+A simple frontend is now served from the backend at the project root. Open the app in the browser after starting the server, then:
+
+- Analyze any GitHub username from the UI
+- Compare multiple usernames using comma-separated values
+- View profile score, trending score, top repositories, and contribution insight
+
+The frontend is available at:
+
+`http://localhost:3000`
+
 ## Deployment
 
-This project is deployment-ready for platforms like Render, Railway, or Heroku.
+This project is deployment-ready for platforms like Render, Railway, Heroku, or any Docker-compatible host.
 
-**Render/Railway Deployment Steps:**
-1. Connect your GitHub repository.
-2. Set Build Command: `npm install`
-3. Set Start Command: `npm start`
-4. Add all environment variables from `.env`.
-5. Ensure you provision a MySQL database and update the `DB_*` variables accordingly.
+### Docker Deployment
 
-*(A `render.yaml` and `Procfile` are included for zero-config deployments).*
+A `Dockerfile` has been added so you can build and run the app as a container:
+
+```bash
+docker build -t github-profile-analyzer .
+docker run -p 3000:3000 --env-file .env github-profile-analyzer
+```
+
+### Render / Railway Deployment Steps
+
+1. Create a GitHub repository and push this code.
+2. Connect your GitHub repository to Render or Railway.
+3. Set Build Command: `npm install`
+4. Set Start Command: `npm start`
+5. Add environment variables from `.env`.
+6. Provision a managed MySQL database and update `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
+
+### GitHub Repository Setup
+
+To initialize a GitHub repository locally and push the project:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+# Use GitHub CLI if installed
+gh repo create github-profile-analyzer --public --source=. --remote=origin --push
+```
+
+If you do not have the GitHub CLI, create a new repository on github.com and follow the instructions to push the code.
+
+*(A GitHub Actions workflow is also included for CI test coverage.)*

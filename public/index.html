@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Profile Analyzer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <h1>GitHub Profile Analyzer</h1>
+        <p>Search, compare, and inspect GitHub profiles with scores, trending insights, and repository highlights.</p>
+      </div>
+      <a class="cta-link" href="/api-docs" target="_blank">API Docs</a>
+    </header>
+
+    <section class="card search-card">
+      <h2>Analyze a GitHub profile</h2>
+      <form id="analyze-form">
+        <label for="username">GitHub username</label>
+        <input id="username" name="username" type="text" placeholder="e.g. torvalds" required />
+        <button type="submit">Analyze Profile</button>
+      </form>
+    </section>
+
+    <section class="card compare-card">
+      <h2>Compare profiles</h2>
+      <form id="compare-form">
+        <label for="compare-users">Enter two or more usernames</label>
+        <input id="compare-users" name="compareUsers" type="text" placeholder="e.g. torvalds, gaearon" required />
+        <button type="submit">Compare Profiles</button>
+      </form>
+    </section>
+
+    <div id="status-bar" class="status-bar"></div>
+
+    <section id="result-section" class="card result-card hidden">
+      <h2>Profile Result</h2>
+      <div id="profile-result"></div>
+    </section>
+
+    <section id="compare-section" class="card result-card hidden">
+      <h2>Comparison Result</h2>
+      <div id="compare-result"></div>
+    </section>
+
+    <footer class="footer">
+      <span>Powered by the GitHub Profile Analyzer API.</span>
+      <span>Run locally at <code>http://localhost:3000</code></span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
